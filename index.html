@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Listing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #181818;
+            color: white;
+        }
+        .container {
+            max-width: 1400px;
+            margin: auto;
+        }
+        .search-bar {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background-color: #222;
+            color: white;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 15px;
+        }
+        .video-card {
+            background: #222;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(255, 255, 255, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .video-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .thumbnail-container{
+            position: relative;
+        }
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-align: center;
+        }
+        .inner-play-button{
+            font-size: 2rem;
+            color: white;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+
+        }
+        .video-card h3 {
+            font-size: 1rem;
+            margin: 10px 0 5px;
+        }
+        .video-card p {
+            font-size: 0.9rem;
+            color: #bbb;
+        }
+        .pagination {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .pagination button {
+            padding: 8px 15px;
+            margin: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <input type="text" id="search" class="search-bar" placeholder="Search videos...">
+        <div id="video-grid" class="grid"></div>
+        <div class="pagination">
+            <button id="prev-page">Prev</button>
+            <span id="page-info"></span>
+            <button id="next-page">Next</button>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = "https://api.freeapi.app/api/v1/public/youtube/videos";
+        const videoGrid = document.getElementById("video-grid");
+        const searchInput = document.getElementById("search");
+        const prevPageBtn = document.getElementById("prev-page");
+        const nextPageBtn = document.getElementById("next-page");
+        const pageInfo = document.getElementById("page-info");
+        let videos = [];
+        let currentPage = 1;
+        const limit = 12;
+
+        async function fetchVideos(page = 1) {
+            try {
+                const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`);
+                const result = await response.json();
+                videos = result.data.data.map(item => item.items);
+                displayVideos(videos);
+                updatePagination(result.data);
+                searchInput.value = "";
+            } catch (error) {
+                console.error("Error fetching videos:", error);
+            }
+        }
+
+        function displayVideos(videoList) {
+            videoGrid.innerHTML = "";
+            videoList.forEach(video => {
+                const videoCard = document.createElement("div");
+                videoCard.classList.add("video-card");
+                videoCard.innerHTML = `
+                    <div class="thumbnail-container">
+                        <img src="${video.snippet.thumbnails.high.url}" alt="Thumbnail" onclick="openVideo('${video.id}')">
+                        <div class="play-button" onclick="openVideo('${video.id}')"><span class="inner-play-button">▶</span></div>
+                    </div>
+                    <h3>${video.snippet.title}</h3>
+                    <p>${video.snippet.channelTitle}</p>
+                    <p>Views: ${video.statistics.viewCount} | Likes: ${video.statistics.likeCount} | Comments: ${video.statistics.commentCount}</p>
+                `;
+                videoGrid.appendChild(videoCard);
+            });
+        }
+
+        function openVideo(videoId) {
+            window.open(`https://www.youtube.com/watch?v=${videoId}`, "_blank");
+        }
+
+        searchInput.addEventListener("input", () => {
+            const query = searchInput.value.toLowerCase();
+            const filteredVideos = videos.filter(video => 
+                video.snippet.title.toLowerCase().includes(query) ||
+                video.snippet.channelTitle.toLowerCase().includes(query)
+            );
+            displayVideos(filteredVideos);
+        });
+
+        function updatePagination(data) {
+            pageInfo.textContent = `Page ${data.page} of ${data.totalPages}`;
+            prevPageBtn.disabled = !data.previousPage;
+            nextPageBtn.disabled = !data.nextPage;
+        }
+
+        prevPageBtn.addEventListener("click", () => {
+            if (currentPage > 1) {
+                currentPage--;
+                fetchVideos(currentPage);
+            }
+        });
+
+        nextPageBtn.addEventListener("click", () => {
+            currentPage++;
+            fetchVideos(currentPage);
+        });
+
+        fetchVideos();
+    </script>
+</body>
+</html>
