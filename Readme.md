@@ -33,7 +33,7 @@ The application is live at **[Live Demo](https://stirring-lamington-3dd439.netli
 ## Screenshots
 ![Wide Display View](assets/big.png)
 ![Laptop View](assets/laptop.png)
-![Mobile View](assets/mobile.png)
+![Mobile View](assets/moblie.png)
 
 
 ## Submission
